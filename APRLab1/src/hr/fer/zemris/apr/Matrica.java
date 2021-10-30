@@ -12,12 +12,11 @@ import java.util.Objects;
 public class Matrica {
 	private int rows, columns;
 	private double[][] data;
-	private double eps = 1E-9;
 	
-	public Matrica(double[][] data) {
-		rows = data.length;
-		columns = data[0].length;
-		this.data = data.clone();
+	public Matrica(double[][] matrix) {
+		rows = matrix.length;
+		columns = matrix[0].length;
+		this.data = matrix.clone();
 	}
 	
 	public Matrica(int rows, int columns) {
@@ -80,6 +79,7 @@ public class Matrica {
 				bw.write("\n");
 			}
 			bw.flush();
+			bw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}			
@@ -173,7 +173,7 @@ public class Matrica {
 	}
 	
 	public Matrica multiply(Matrica other) { // mnozenje ove matrice s drugom
-		if(this.rows != other.columns) {
+		if(this.columns != other.rows) {
 			System.out.println("Dimenzije matrica se ne poklapaju!");
 			return null;
 		}
@@ -243,32 +243,11 @@ public class Matrica {
 		}
 		for(int i = 0; i < this.rows; i++) {
 			for(int j = 0; j < this.columns; j++) {
-				if(Math.abs(this.data[i][j] - other.data[i][j]) > eps)
+				if(Math.abs(this.data[i][j] - other.data[i][j]) > 1E-9)
 					return false;
 			}
 		}		
 		return true;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + Arrays.deepHashCode(data);
-		result = prime * result + Objects.hash(columns, rows);
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Matrica other = (Matrica) obj;
-		return columns == other.columns && Arrays.deepEquals(data, other.data) && rows == other.rows;
 	}
 	
 	public Matrica supUnatrag(Matrica y) {
@@ -294,17 +273,19 @@ public class Matrica {
 		return b;
 	}
 	
-	public Matrica LUP(boolean useP) {
+	public Matrica LUP(boolean useP, Matrica P, int[] rowSwaps, double eps) {
 		if(!this.isSquare()) {
 			System.out.println("LUP dekompozicija moguća je jedino na kvadratnim matricama.");
 			return null;
 		}
+		Matrica LU = this.copy();
+		int N = this.columns;
+		
+		if(P == null) {
+			P = new Matrica(N, N);
+		}
 		
 		if(useP) {
-			
-			Matrica LU = this.copy();			
-			int N = LU.columns;			
-			Matrica P = new Matrica(N,N);
 			
 			for(int i = 0; i < N; i++) {
 				for(int j = 0; j < N; j++) {
@@ -318,7 +299,7 @@ public class Matrica {
 			
 			for(int i = 0; i < N; i++) {
 				Matrica column = LU.getColumn(i);
-				int R = column.findRowWithMax(i);
+				int R = column.findRowWithMax(i, eps);
 				
 				if(Math.abs(LU.data[R][i]) < eps) {
 					System.out.println("Matrica je singularna. Ne može se riješiti");
@@ -328,6 +309,7 @@ public class Matrica {
 				if(i < N - 1) {				
 					LU.swapRows(R, i);
 					P.swapRows(R, i);
+					rowSwaps[0]++;
 				}
 				
 				for(int j = i + 1; j < N; j++) {
@@ -341,8 +323,6 @@ public class Matrica {
 			return LU;
 			
 		} else {
-			int N = this.columns;
-			Matrica LU = this.copy();
 			for(int i = 0; i < N - 1 ; i++) {
 				for(int j = i + 1; j < N; j++) {
 					if(Math.abs(LU.data[i][i]) < eps) {
@@ -359,7 +339,7 @@ public class Matrica {
 		}
 	}
 	
-	private int findRowWithMax(int startPoint) {
+	private int findRowWithMax(int startPoint, double eps) {
 		double max = 0;
 		
 		for(int i = startPoint; i < this.rows; i++) {
@@ -377,9 +357,17 @@ public class Matrica {
 
 	public Matrica inv() {
 		int N = this.rows;
+		
 		Matrica inv = new Matrica(N, N);
 		
-		Matrica LU = this.LUP(true);
+		Matrica P = new Matrica(N,N);
+		
+		int[] rowSwaps = {0};
+		Matrica LU = this.LUP(true, P, rowSwaps, 1E-9);
+		if(LU == null) {
+			return null;
+		}
+		
 		Matrica E = new Matrica(N, N);
 		
 		for(int i = 0; i < N; i++) {
@@ -396,15 +384,47 @@ public class Matrica {
 			inv.setColumn(i, LU.supUnatrag(LU.supUnaprijed(E.getColumn(i))));
 		}		
 		
-		return inv;
+		return inv.multiply(P);
 	}
 	
 	public double det() {
-		return 0;
+		int N = this.rows;
+		
+		Matrica P = new Matrica(N, N);
+		
+		int[] rowSwaps = {0};
+		Matrica LU = this.LUP(true, P, rowSwaps, 1E-9);
+		
+		if(LU == null) {
+			System.out.println("Nemoguce pronaci determinantu pomocu LUP dekompozicije.");
+			return 0;
+		}
+		
+		double sum = 1;
+		for(int i = 0; i < N; i++) {
+			sum *= LU.data[i][i];
+		}
+		
+		return sum * Math.pow(-1, rowSwaps[0]);
 	}
 	
 	public Matrica copy() {
-		Matrica copy = new Matrica(this.data);
+		int M = this.rows;
+		int N = this.columns;
+		Matrica copy = new Matrica(M, N);
+		for(int i = 0; i < M; i++) {
+			for(int j = 0; j < N; j++) {
+				copy.data[i][j] = this.data[i][j];
+			}
+		}
 		return copy;
+	}
+
+	public int getRows() {
+		return rows;
+	}
+
+	public int getColumns() {
+		return columns;
 	}
 }
