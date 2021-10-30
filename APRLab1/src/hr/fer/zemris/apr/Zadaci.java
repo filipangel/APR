@@ -4,7 +4,8 @@ public class Zadaci {
 
 	public static void main(String[] args) {
 		Matrica A = new Matrica("A.txt");
-		
-		if(A.LUP(false) != null) A.LUP(false).print();;
+		A.print();
+		System.out.println();
+		A.inv().print();
 	}
 }

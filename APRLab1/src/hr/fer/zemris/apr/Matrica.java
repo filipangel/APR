@@ -192,15 +192,44 @@ public class Matrica {
 		Matrica column = new Matrica(this.rows, 1);
 		
 		for(int i = 0; i < this.rows; i++) {
-			column.set(i, 0, this.data[i][0]);
+			column.set(i, 0, this.data[i][num]);
 		}
 		return column;
 	}
 	
-	public void setColumn(int column, Matrica newColumn) {
+	public Matrica setColumn(int column, Matrica newColumn) {
 		for(int i = 0; i < this.rows; i++) {
 			this.set(i,  column, newColumn.get(i, 0));
 		}
+		
+		return this;
+	}
+	
+	public Matrica getRow(int num) {
+		Matrica row = new Matrica(1, this.columns);
+		
+		for(int i = 0; i < this.columns; i++) {
+			row.set(0, i, this.data[num][i]);
+		}
+		return row;
+	}
+	
+	public Matrica setRow(int row, Matrica newRow) {
+		for(int i = 0; i < this.columns; i++) {
+			this.set(row,  i, newRow.get(0, i));
+		}
+		
+		return this;
+	}
+	
+	public Matrica swapRows(int first, int second) {
+		Matrica row1 = this.getRow(first);
+		Matrica row2 = this.getRow(second);
+		
+		this.setRow(second, row1);
+		this.setRow(first, row2);
+		
+		return this;
 	}
 	
 	public boolean isSquare() {
@@ -242,12 +271,27 @@ public class Matrica {
 		return columns == other.columns && Arrays.deepEquals(data, other.data) && rows == other.rows;
 	}
 	
-	public Matrica supUnatrag(Matrica slobodniVektor) {
-		return null;
+	public Matrica supUnatrag(Matrica y) {
+		for(int i = this.rows - 1; i >= 0; i--) {
+			y.data[i][0] /= this.data[i][i];
+			for(int j = 0; j < i; j++) {
+				y.data[j][0] -= this.data[j][i] * y.data[i][0];
+			}
+		}
+		
+		return y;
 	}
 	
-	public Matrica supUnaprijed(Matrica slobodniVektor) {
-		return null;
+	public Matrica supUnaprijed(Matrica b) {
+		int N = this.rows;
+		
+		for(int i = 0; i < N - 1; i++) {
+			for(int j = i + 1; j < N; j++) {
+				b.data[j][0] -= this.data[j][i] * b.data[i][0];
+			}
+		}
+		
+		return b;
 	}
 	
 	public Matrica LUP(boolean useP) {
@@ -257,6 +301,44 @@ public class Matrica {
 		}
 		
 		if(useP) {
+			
+			Matrica LU = this.copy();			
+			int N = LU.columns;			
+			Matrica P = new Matrica(N,N);
+			
+			for(int i = 0; i < N; i++) {
+				for(int j = 0; j < N; j++) {
+					if(i == j) {
+						P.data[i][j] = 1;
+					} else {
+						P.data[i][j] = 0;
+					}
+				}
+			}
+			
+			for(int i = 0; i < N; i++) {
+				Matrica column = LU.getColumn(i);
+				int R = column.findRowWithMax(i);
+				
+				if(Math.abs(LU.data[R][i]) < eps) {
+					System.out.println("Matrica je singularna. Ne može se riješiti");
+					return null;
+				}
+				
+				if(i < N - 1) {				
+					LU.swapRows(R, i);
+					P.swapRows(R, i);
+				}
+				
+				for(int j = i + 1; j < N; j++) {
+					LU.data[j][i] /= LU.data[i][i];
+					for(int k = i + 1; k < N; k++) {
+						LU.data[j][k] -= LU.data[j][i] * LU.data[i][k];
+					}
+				}
+			}
+			
+			return LU;
 			
 		} else {
 			int N = this.columns;
@@ -275,11 +357,46 @@ public class Matrica {
 			}
 			return LU;
 		}
-		return null;
 	}
 	
+	private int findRowWithMax(int startPoint) {
+		double max = 0;
+		
+		for(int i = startPoint; i < this.rows; i++) {
+			if(Math.abs(this.data[i][0]) > max) {
+				max = Math.abs(this.data[i][0]);
+			}
+		}
+		for(int i = startPoint; i < this.rows; i++) {
+			if(Math.abs(max - Math.abs(this.data[i][0])) < eps) {
+				return i;
+			}
+		}
+		return 0;
+	}
+
 	public Matrica inv() {
-		return null;
+		int N = this.rows;
+		Matrica inv = new Matrica(N, N);
+		
+		Matrica LU = this.LUP(true);
+		Matrica E = new Matrica(N, N);
+		
+		for(int i = 0; i < N; i++) {
+			for(int j = 0; j < N; j++) {
+				if(i == j) {
+					E.data[i][j] = 1;
+				} else {
+					E.data[i][j] = 0;
+				}
+			}
+		}
+		
+		for(int i = 0; i < N; i++) {
+			inv.setColumn(i, LU.supUnatrag(LU.supUnaprijed(E.getColumn(i))));
+		}		
+		
+		return inv;
 	}
 	
 	public double det() {
