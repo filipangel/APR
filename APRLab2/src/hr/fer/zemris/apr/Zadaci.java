@@ -1,10 +1,17 @@
 package hr.fer.zemris.apr;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 public class Zadaci {
 
 	public static void main(String[] args) {
-		IFunction f= new DrugaFunkcija();
-		double[] x0 = {0.1, 0.3};
-		double[] min = OptimizationMethods.hookeJeeves(1E-6, f, 0.5, false, x0);
+		BufferedReader br = new BufferedReader(new FileReader("config.txt"));
+		
+		zadatak1();
+		zadatak2();
+		zadatak3();
+		zadatak4();
+		zadatak5();
 	}
 }

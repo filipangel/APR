@@ -1,6 +1,11 @@
 package hr.fer.zemris.apr;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class OptimizationMethods {
 	public static double zlatniRez(double a, double b, double e, IFunction f, boolean print) {
@@ -154,8 +159,148 @@ public class OptimizationMethods {
 		return x;
 	}
 	
-	public static double[] Simplex(double alpha, double beta, double gamma, double e, IFunction f, boolean print, double ... x0) {
+	public static double[] simplex(double alpha, double beta, double gamma, double sigma, double dx, double e, IFunction f, boolean print, double ... xStart) {
+		int n = xStart.length;
+		Double[] x0 = new Double[n];
+		int i = 0;
+		for(double x : xStart) {
+			x0[i++] = Double.valueOf(x);
+		}
 		
-		return null;
+		ArrayList<Double[]> simplex = new ArrayList<Double[]>();
+		simplex.add(x0);
+		
+		for(i = 0; i < n; i++) {
+			Double[] temp = Arrays.copyOf(x0, n);
+			temp[i] += dx;
+			simplex.add(temp);
+		}		
+		
+		simplex.sort(simplexComp(f));
+		while(diff(simplex.get(0), simplex.get(simplex.size() - 1)) > e){
+			simplex.sort(simplexComp(f));
+			
+			Double[] xc = findCentroid(simplex);
+			Double[] xr = reflection(xc, simplex, alpha);
+			double fxl = getValue(simplex.get(0), f);
+			if(print) System.out.println("Centroid: " + Arrays.toString(xc) + " F(xl): " + fxl);
+			if(getValue(xr, f) < fxl) {
+				Double[] xe = expansion(xc, xr, gamma);
+				if(getValue(xe, f) < fxl) {
+					simplex.set(simplex.size() - 1, xe);
+				} else {
+					simplex.set(simplex.size() - 1, xr);
+				}
+			} else {
+				boolean condition = true;
+				for(int j = 0; j < simplex.size() - 1; j++) {
+					if(getValue(xr, f) <= getValue(simplex.get(j), f)) {
+						condition = false;
+					}
+				}
+				if(condition) {
+					if(getValue(xr, f) < getValue(simplex.get(simplex.size() - 1), f)) {
+						simplex.set(simplex.size() - 1, xr);
+					}
+					Double[] xk = contraction(xc, simplex, beta);
+					if(getValue(xk, f) < getValue(simplex.get(simplex.size() - 1), f)) {
+						simplex.set(simplex.size() - 1, xk);
+					} else {
+						moveTowardsxL(simplex, sigma);
+					}
+				} else {
+					simplex.set(simplex.size() - 1, xr);
+				}
+			}
+		}
+		double[] solution = Stream.of(simplex.get(0)).mapToDouble(Double::doubleValue).toArray();
+		System.out.println("Metodom simpleksa pronaden je minimum: " + Arrays.toString(solution) + ". Potrebno poziva funkcije: " + f.getTimesCalled());
+		return solution;
+	}
+	
+	private static void moveTowardsxL(ArrayList<Double[]> simplex, double sigma) {
+		Double[] xl = simplex.get(0);
+		for(Double[] x : simplex) {
+			for(int i = 0; i < xl.length; i++) {
+				x[i] = sigma * (x[i] + xl[i]);
+			}
+		}
+	}
+
+	private static Double[] contraction(Double[] xc, ArrayList<Double[]> simplex, double beta) {
+		Double[] xk = new Double[xc.length];
+		
+		for(int i = 0; i < xc.length; i++) {
+			xk[i] = (1 - beta) * xc[i] + beta * simplex.get(simplex.size() - 1)[i];
+		}
+		return xk;
+	}
+
+	private static Double[] expansion(Double[] xc, Double[] xr, double gamma) {
+		Double[] xe = new Double[xc.length];
+		
+		for(int i = 0; i < xc.length; i++) {
+			xe[i] = (1 - gamma) * xc[i] + gamma * xr[i];
+		}
+		return xe;
+	}
+
+	private static Double[] reflection(Double[] xc, ArrayList<Double[]> simplex, double alpha) {
+		Double[] xr = new Double[xc.length];
+		
+		for(int i = 0; i < xc.length; i++) {
+			xr[i] = (1 + alpha) * xc[i] - alpha * simplex.get(simplex.size() - 1)[i];
+		}
+		return xr;
+	}
+
+	private static Double[] findCentroid(ArrayList<Double[]> simplex) {
+		int n = simplex.size();
+		Double[] centroid = Arrays.copyOf(simplex.get(0), simplex.get(0).length);
+		for(int i = 0; i < centroid.length; i++) {
+			centroid[i] = 0.0;
+		}
+		for(int i = 0; i < simplex.size() - 1; i++) {
+			for(int j = 0; j < centroid.length; j++) {
+				centroid[j] += simplex.get(i)[j];
+			}
+		}
+		for(int i = 0; i < centroid.length; i++) {
+			centroid[i] /= simplex.size() - 1;
+		}
+		return centroid;
+	}
+
+	private static double diff(Double[] x1, Double[] x2) {
+		int n = x1.length;
+		double diff = 0;
+		for(int i = 0; i < n; i++) {
+			diff += Math.abs(x1[i] - x2[i]);
+		}
+		return diff;
+	}
+
+	public static Comparator<Double[]> simplexComp(IFunction f){
+		return new Comparator<Double[]>() {
+
+			@Override
+			public int compare(Double[] x1, Double[] x2) {
+				double f1 = getValue(x1, f);
+				double f2 = getValue(x2, f);
+				if(f1 < f2) {
+					return -1;
+				} else if (f1 == f2) {
+					return 0;
+				} else {
+					return 1;
+				}
+			}
+			
+		};
+	}
+	
+	public static double getValue(Double[] x, IFunction f) {
+		double[] x1 = Stream.of(x).mapToDouble(Double::doubleValue).toArray();
+		return f.at(x1);
 	}
 }
