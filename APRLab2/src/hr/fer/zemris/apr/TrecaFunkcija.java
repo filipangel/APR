@@ -6,6 +6,7 @@ public class TrecaFunkcija implements IFunction {
 	
 	@Override
 	public double at(double... x) {
+		timesCalled++;
 		double value = 0;
 		int i = 1;
 		for(double xi : x) {
