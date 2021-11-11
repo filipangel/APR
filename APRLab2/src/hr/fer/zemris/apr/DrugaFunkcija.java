@@ -18,4 +18,9 @@ public class DrugaFunkcija implements IFunction {
 	public int getTimesCalled() {
 		return timesCalled;
 	}
+	
+	@Override
+	public void reset() {
+		timesCalled = 0;
+	}
 }

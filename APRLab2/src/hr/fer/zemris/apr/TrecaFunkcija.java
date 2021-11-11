@@ -21,4 +21,8 @@ public class TrecaFunkcija implements IFunction {
 		return timesCalled;
 	}
 
+	@Override
+	public void reset() {
+		timesCalled = 0;
+	}
 }

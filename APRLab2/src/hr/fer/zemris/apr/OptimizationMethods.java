@@ -99,14 +99,18 @@ public class OptimizationMethods {
 					@Override
 					public int getTimesCalled() {
 						return 0;
-					}					
+					}
+					
+					@Override
+					public void reset() {
+					}
 				};
 				x[i] = zlatniRez2(1, 0, e, f_temp, print);
 			}
 			if(print) System.out.println("Iteracija br. " + iterCount++ + " trenutni minimum: " + Arrays.toString(x));
 		} while(diff(x, xs) > e);
 		
-		System.out.println("Minimum " + Arrays.toString(x) + " pronaden pretrazivanjem po koordinatnim osima. Poziva funkcije f(x):" + f.getTimesCalled());
+		if(print) System.out.println("Minimum " + Arrays.toString(x) + " pronaden pretrazivanjem po koordinatnim osima. Poziva funkcije f(x):" + f.getTimesCalled());
 		return x;
 	}
 	
@@ -137,7 +141,7 @@ public class OptimizationMethods {
 				xp = Arrays.copyOf(xb, xb.length);
 			}
 		} while(dx > e);
-		System.out.println("Metodom Hooke-Jeeves pronaden je minimum " + Arrays.toString(xb) + ". Potrebno poziva f(x): " + f.getTimesCalled());
+		if(print) System.out.println("Metodom Hooke-Jeeves pronaden je minimum " + Arrays.toString(xb) + ". Potrebno poziva f(x): " + f.getTimesCalled());
 		return xb;
 	}
 	
@@ -174,9 +178,7 @@ public class OptimizationMethods {
 			Double[] temp = Arrays.copyOf(x0, n);
 			temp[i] += dx;
 			simplex.add(temp);
-		}		
-		
-		simplex.sort(simplexComp(f));
+		}
 		while(diff(simplex.get(0), simplex.get(simplex.size() - 1)) > e){
 			simplex.sort(simplexComp(f));
 			
@@ -214,7 +216,7 @@ public class OptimizationMethods {
 			}
 		}
 		double[] solution = Stream.of(simplex.get(0)).mapToDouble(Double::doubleValue).toArray();
-		System.out.println("Metodom simpleksa pronaden je minimum: " + Arrays.toString(solution) + ". Potrebno poziva funkcije: " + f.getTimesCalled());
+		if(print) System.out.println("Metodom simpleksa pronaden je minimum: " + Arrays.toString(solution) + ". Potrebno poziva funkcije: " + f.getTimesCalled());
 		return solution;
 	}
 	
