@@ -8,7 +8,7 @@ Assignments written in Java.
 
 # Assignment 1 (APRLab1)
 Matrix class implemented with all necessary variables, operators, constructors and other methods.
-Also implemented LU/LUP decomposition which is also used for solving linear equations and finding inverse matrices.
+Implemented methods for LU/LUP decomposition which are also used to solve linear equations and find inverse matrices.
 
 # Assignment 2 (APRLab2)
 Some basic numerical optimization algorithms are implemented. Algorithms include:
