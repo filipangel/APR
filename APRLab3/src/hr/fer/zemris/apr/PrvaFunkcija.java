@@ -3,9 +3,11 @@ package hr.fer.zemris.apr;
 public class PrvaFunkcija implements IFunction {
 
 	private int timesCalled = 0;
+	private int timesGradientCalled = 0;
+	private int timesHessCalled = 0;
 	
 	@Override
-	public double at(double... x) {
+	public double at(double ... x) {
 		if(x.length != 2) {
 			throw new IllegalArgumentException();
 		}
@@ -16,26 +18,47 @@ public class PrvaFunkcija implements IFunction {
 	}
 
 	@Override
-	public int getTimesCalled() {
-		return timesCalled;
+	public int[] getTimesCalled() {
+		return new int[] {timesCalled, timesGradientCalled, timesHessCalled};
 	}
 	
 	@Override
 	public void reset() {
 		timesCalled = 0;
+		timesGradientCalled = 0;
+		timesHessCalled = 0;
 	}
 
 	@Override
-	public Matrica getGradient(double ... values) {
-		double x1 = values[0];
-		double x2 = values[1];
+	public Matrica getGradient(double ... x) {
+		if(x.length != 2) {
+			throw new IllegalArgumentException();
+		}
+		double x1 = x[0];
+		double x2 = x[1];
 		
 		double[][] gradientArray = {
-				{-400 * x1 * (x2 - x1*x1) - 2 * (1 - x1)},
-				{200 * (x2 - x1*x1)}
+				{-400 * x1 * (x2 - Math.pow(x1, 2)) - 2 * (1 - x1), 200 * (x2 - Math.pow(x1, 2))}
 		};
-		Matrica gradient = new Matrica(gradientArray); 
-		return gradient;
+		
+		timesGradientCalled++;
+		return new Matrica(gradientArray);
+	}
+
+	@Override
+	public Matrica getHess(double ... x) {
+		if(x.length != 2) {
+			throw new IllegalArgumentException();
+		}
+		double x1 = x[0];
+		double x2 = x[1];
+		
+		double[][] hessArray = {
+				{(-400 * (x2 - Math.pow(x1, 2)) + 800 * Math.pow(x1, 2) + 2), (-400 * x1)},
+				{(-400 * x1), (200)}
+		};
+		timesHessCalled++;
+		return new Matrica(hessArray);
 	}
 
 }

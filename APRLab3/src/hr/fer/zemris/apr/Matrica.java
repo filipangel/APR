@@ -94,7 +94,7 @@ public class Matrica {
 	}
 
 	public Matrica scalarMultiply(double scalar) {
-		Matrica multiplied = new Matrica(rows, columns);
+		Matrica multiplied = this;
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < columns; j++) {
 				multiplied.data[i][j] *= scalar;
@@ -131,34 +131,6 @@ public class Matrica {
 			}
 		}		
 		return subtracted;
-	}
-	
-	public Matrica addToExisting(Matrica other) {
-		if(other.rows != this.rows || other.columns != this.columns) {
-			System.out.println("Dimenzije matrica se ne poklapaju!");
-			return null;
-		}
-		
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < columns; j++) {
-				this.data[i][j] = this.data[i][j] + other.data[i][j];
-			}
-		}
-		return this;
-	}
-	
-	public Matrica subtractFromExisting(Matrica other) {
-		if(other.rows != this.rows || other.columns != this.columns) {
-			System.out.println("Dimenzije matrica se ne poklapaju!");
-			return null;
-		}
-		
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < columns; j++) {
-				this.data[i][j] = this.data[i][j] - other.data[i][j];
-			}
-		}
-		return this;
 	}
 	
 	public Matrica transpose() {
@@ -426,5 +398,15 @@ public class Matrica {
 
 	public int getColumns() {
 		return columns;
+	}
+	
+	public double vectorNorm() {
+		double sum = 0;
+		for(double[] row : data) {
+			for(double value : row) {
+				sum += value*value;
+			}
+		}
+		return Math.sqrt(sum);
 	}
 }
