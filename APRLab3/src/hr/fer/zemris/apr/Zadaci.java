@@ -75,8 +75,9 @@ public class Zadaci {
 		double[] xmin = OptimizationMethods.GaussNewton(false, 1E-6, s1, false, x0);
 		int[] timesCalled = s1.getTimesCalled();
 		System.out.println("Pronađeno rješenje: " + OptimizationMethods.stringX(xmin, 9) + " F(xmin) = " + s1.at(xmin) + " Broj poziva: f: " + timesCalled[0] + " j: " + timesCalled[1] + " g: " + timesCalled[2]);
+		
 		s1.reset();
-		System.out.println("Rezultat metode Gauss-Newton s optimalnim iznosom koraka:");
+		
 		xmin = OptimizationMethods.GaussNewton(true, 1E-6, s1, false, x0);
 		timesCalled = s1.getTimesCalled();
 		System.out.println("Pronađeno rješenje: " + OptimizationMethods.stringX(xmin, 9) + " F(xmin) = " + s1.at(xmin) + " Broj poziva: f: " + timesCalled[0] + " j: " + timesCalled[1] + " g: " + timesCalled[2]);
