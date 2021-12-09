@@ -274,7 +274,7 @@ public class Matrica {
 				int R = column.findRowWithMax(i, eps);
 				
 				if(Math.abs(LU.data[R][i]) < eps) {
-					System.out.println("Matrica je singularna. Ne može se riješiti");
+					//System.out.println("Matrica je singularna. Ne može se riješiti");
 					return null;
 				}
 				
@@ -408,5 +408,15 @@ public class Matrica {
 			}
 		}
 		return Math.sqrt(sum);
+	}
+	
+	public static Matrica solveSystem(Matrica A, Matrica b) {	
+		Matrica P = new Matrica(A.getRows(), A.getColumns());
+		Matrica LU = A.LUP(true, P, new int[] {0}, 1E-6);
+		
+		Matrica y = LU.supUnaprijed(P.multiply(b));
+		Matrica x = LU.supUnatrag(y);
+		
+		return x;
 	}
 }

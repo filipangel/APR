@@ -5,11 +5,75 @@ import java.util.concurrent.TimeUnit;
 
 public class OptimizationMethods {
 	
-	public static double[] GaussNewton() {
-		return null;
+	public static double[] GaussNewton(boolean useGoldenSection, double eps, IFunctionSystem s, boolean print, double ... x0) {
+		double[] x = Arrays.copyOf(x0, x0.length);
+		Matrica J = s.getJacobian(x);
+		Matrica G = s.getG(x);
+		Matrica g = J.transpose().multiply(G);
+		double lambda = 1;
+		
+		do {
+			J = s.getJacobian(x);
+			G = s.getG(x);
+			
+			Matrica A = J.transpose().multiply(J);
+			g = J.transpose().multiply(G);
+			
+			if(A.inv() == null) {
+				System.out.println("Nemoguće pronaći inverz matrice A.");
+				return x0;
+			}			
+			
+			Matrica dx = A.inv().scalarMultiply(-1).multiply(g).transpose();
+			
+			if(useGoldenSection) {
+				final double[] xFinal = Arrays.copyOf(x, x.length);
+				final IFunctionSystem sFinal = s; 
+				
+				lambda = goldenSectionSearchUnimodal(1, 0, eps, new IFunction() {
+
+					@Override
+					public double at(double... x) {
+						double l = x[0];
+						double[] x0 = Arrays.copyOf(xFinal, xFinal.length);
+						
+						for(int i = 0; i < x0.length; i++) {
+							x0[i] += l * dx.get(0, i);
+						}												
+						return sFinal.at(x0);
+					}
+
+					@Override
+					public int[] getTimesCalled() {
+						return null;
+					}
+
+					@Override
+					public void reset() {
+					}
+
+					@Override
+					public Matrica getGradient(double... x) {
+						return null;
+					}
+
+					@Override
+					public Matrica getHess(double... x) {
+						return null;
+					}					
+				}, false);
+			}
+			
+			for(int i = 0; i < x.length; i++) {
+				x[i] += lambda * dx.get(0, i);
+			}
+			
+		} while(g.vectorNorm() > eps);
+		
+		return x;
 	}
 
-	public static double[] NewtonRaphson(boolean useGoldenSection, double eps, IFunction f, boolean print, double ... x0) throws InterruptedException {
+	public static double[] NewtonRaphson(boolean useGoldenSection, double eps, IFunction f, boolean print, double ... x0) {
 		double[] x = Arrays.copyOf(x0, x0.length);
 		int divCounter = 0;
 		double norm = 0;
@@ -18,27 +82,28 @@ public class OptimizationMethods {
 			double prevNorm = norm;
 			
 			Matrica gradient = f.getGradient(x);
-			Matrica hess = f.getHess(x);
+			Matrica hess = f.getHess(x);			
 			
 			if(useGoldenSection) {
 				final IFunction fFinal = f;
 				final double[] xFinal = Arrays.copyOf(x, x.length);
-				final Matrica gradientFinal = gradient;
-				final Matrica hessFinal = hess;
+				final Matrica gradientFinal = gradient.copy();
+				final Matrica hessFinal = hess.copy();
 				
-				lambda = goldenSectionSearchUnimodal(0.01, 0, eps, new IFunction() {
+				lambda = goldenSectionSearchUnimodal(1, 0, eps, new IFunction() {
 
 					@Override
 					public double at(double... x) {
-						double lambda = x[0];
+						double l = x[0];
+						double[] x0 = Arrays.copyOf(xFinal, xFinal.length);
 						
 						Matrica negativeH = hessFinal.inv().scalarMultiply(-1);
 						Matrica dx = negativeH.multiply(gradientFinal.transpose()).transpose();
 						
-						for(int i = 0; i < xFinal.length; i++) {
-							xFinal[i] = xFinal[i] + lambda * dx.get(0, i);
+						for(int i = 0; i < x0.length; i++) {
+							x0[i] = x0[i] - l * dx.get(0, i);
 						}
-						return fFinal.at(xFinal);
+						return fFinal.at(x0);
 					}
 
 					@Override
@@ -78,10 +143,7 @@ public class OptimizationMethods {
 			if(divCounter >= 100) {
 				if(print) System.out.print("Newton-Raphson postupak je divergirao. Zadnje pronađeno rješenje je: " + stringX(x, 8) + "\n");
 				return x;
-			}
-			
-			//TimeUnit.SECONDS.sleep(1);
-			
+			}			
 		} while(norm > eps);
 		if(print) System.out.print("Newton-Raphson postupak je uspješno pronašao rješenje. Točka minimuma: " + stringX(x, 8) + "\n");
 		return x;			
@@ -100,15 +162,16 @@ public class OptimizationMethods {
 				final double[] xFinal = Arrays.copyOf(x, x.length);
 				final Matrica gradient = f.getGradient(x);
 				
-				lambda = goldenSectionSearchUnimodal(eps, 0, eps, new IFunction() {
+				lambda = goldenSectionSearchUnimodal(1, 0, eps, new IFunction() {
 
 					@Override
 					public double at(double ... x) {
-						double lambda = x[0];
-						for(int i = 0; i < xFinal.length; i++) {
-							xFinal[i] = xFinal[i] + lambda * gradient.get(0, i);
+						double[] x0 = Arrays.copyOf(xFinal, xFinal.length);
+						double l = x[0];
+						for(int i = 0; i < x0.length; i++) {
+							x0[i] = x0[i] + l * gradient.get(0, i);
 						}						
-						return fFinal.at(xFinal);
+						return fFinal.at(x0);
 					}
 
 					@Override
