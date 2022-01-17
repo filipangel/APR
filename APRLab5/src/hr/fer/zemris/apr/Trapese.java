@@ -44,7 +44,7 @@ public class Trapese implements IIntegration {
 			if(error) {
 				double trueX1 = x0.get(1, 1) * Math.cos(t) + x0.get(2, 1) * Math.sin(t);
 				double trueX2 = x0.get(2, 1) * Math.cos(t) - x0.get(1, 1) * Math.sin(t);
-				diff += Math.abs(trueX1 - xNew.get(1, 1)) + Math.abs(trueX2 - xNew.get(2, 1));
+				diff += (Math.abs(trueX1 - xNew.get(1, 1)) + Math.abs(trueX2 - xNew.get(2, 1)))/2;
 			}
 			
 			xValues.add(xNew);
