@@ -6,8 +6,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Objects;
 
 public class Matrica {
 	private int rows, columns;
@@ -86,20 +84,21 @@ public class Matrica {
 	}
 	
 	public double get(int i, int j) {
-		return data[i][j];
+		return data[i - 1][j - 1];
 	}
 	
 	public void set(int i, int j, double value) {
-		data[i][j] = value;
+		data[i - 1][j - 1] = value;
 	}
 
 	public Matrica scalarMultiply(double scalar) {
-		Matrica multiplied = this;
+		double[][] newData = new double[this.rows][this.columns];
 		for(int i = 0; i < rows; i++) {
 			for(int j = 0; j < columns; j++) {
-				multiplied.data[i][j] *= scalar;
+				newData[i][j] = this.data[i][j] * scalar;
 			}
 		}
+		Matrica multiplied = new Matrica(newData);
 		return multiplied;
 	}
 	
@@ -164,14 +163,14 @@ public class Matrica {
 		Matrica column = new Matrica(this.rows, 1);
 		
 		for(int i = 0; i < this.rows; i++) {
-			column.set(i, 0, this.data[i][num]);
+			column.data[i][0] = this.data[i][num];
 		}
 		return column;
 	}
 	
 	public Matrica setColumn(int column, Matrica newColumn) {
 		for(int i = 0; i < this.rows; i++) {
-			this.set(i,  column, newColumn.get(i, 0));
+			this.data[i][column] = newColumn.data[i][0];
 		}
 		
 		return this;
@@ -181,16 +180,15 @@ public class Matrica {
 		Matrica row = new Matrica(1, this.columns);
 		
 		for(int i = 0; i < this.columns; i++) {
-			row.set(0, i, this.data[num][i]);
+			row.data[0][i] = this.data[num][i];
 		}
 		return row;
 	}
 	
 	public Matrica setRow(int row, Matrica newRow) {
 		for(int i = 0; i < this.columns; i++) {
-			this.set(row,  i, newRow.get(0, i));
-		}
-		
+			this.data[row][i] = newRow.data[0][i];
+		}		
 		return this;
 	}
 	
@@ -418,5 +416,55 @@ public class Matrica {
 		Matrica x = LU.supUnatrag(y);
 		
 		return x;
+	}
+	
+	public static Matrica unitMatrix(int rows, int columns) {
+		double[][] unit = new double[rows][columns];
+		
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < columns; j++) {
+				if(i == j) unit[i][j] = 1;
+				else unit[i][j] = 0;
+			}
+		}
+		
+		Matrica unitMatrix = new Matrica(unit);
+		return unitMatrix;
+	}
+	
+	public Matrica insertColumnOfOnes() {
+		Matrica newMatrix = new Matrica(this.rows, this.columns + 1);
+		
+		for(int i = 1; i <= newMatrix.rows; i++) {
+			for(int j = 1; j <= newMatrix.columns; j++) {
+				if(j == 1) newMatrix.set(i, j, 1);
+				else newMatrix.set(i, j, this.get(i, j - 1));
+			}
+		}		
+		return newMatrix;
+	}
+	
+	public Matrica insertRowOfOnes() {
+		Matrica newMatrix = new Matrica(this.rows + 1, this.columns);
+		
+		for(int i = 1; i <= newMatrix.rows; i++) {
+			for(int j = 1; j <= newMatrix.columns; j++) {
+				if(i == 1) newMatrix.set(i, j, 1);
+				else newMatrix.set(i, j, this.get(i-1, j));
+			}
+		}		
+		return newMatrix;
+	}
+	
+	public Matrica applySigmoid() {
+		Matrica newMatrix = new Matrica(this.rows, this.columns);
+		
+		for(int i = 1; i <= this.rows; i++) {
+			for(int j = 1; j <= this.columns; j++) {
+				newMatrix.set(i, j, 1 / (1 + Math.exp(-1 * this.get(i, j))));
+			}
+		}
+		
+		return newMatrix;
 	}
 }
